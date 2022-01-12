@@ -2,6 +2,12 @@ import numpy as np
 from scipy.signal import convolve2d
 
 
+def other(this):
+    if this == 1:
+        return 2
+    return 1
+
+
 class Connect4Board:
 
     def __init__(self):
@@ -29,29 +35,84 @@ class Connect4Board:
     def can_drop(self, col):
         return self.empty_flags[col]
 
-    def evaluate(self):
+    def evaluate(self, player):
         h_kernel = np.array([[1, 1, 1, 1]])
         v_kernel = np.transpose(h_kernel)
         d1_kernel = np.eye(4, dtype=int)
         d2_kernel = np.eye(4, dtype=int)[:][::-1]
         win_kernels = [h_kernel, v_kernel, d1_kernel, d2_kernel]
 
-        p1 = self.board == 1
-        p2 = self.board == 2
+        b_player = self.board == player
+        b_other = self.board == other(player)
 
         for kernel in win_kernels:
-            if (convolve2d(p1, kernel, mode="valid") == 4).any():
+            if (convolve2d(b_player, kernel, mode="valid") == 4).any():
                 return 1000
-            if (convolve2d(p2, kernel, mode="valid") == 4).any():
+            if (convolve2d(b_other, kernel, mode="valid") == 4).any():
                 return -1000
         return 0
 
     def moves_left(self):
         return self.empty_flags.any()
 
+    def minimax(self, depth, is_max, bot_number):
+        score = self.evaluate(bot_number)
+
+        if score == 1000:
+            return score - depth
+        if score == -1000:
+            return score + depth
+        if not self.moves_left():
+            return 0
+
+        if is_max:
+            best = -1000
+
+            for pos_move in np.where(self.empty_flags)[0]:
+                self.drop(pos_move, bot_number)
+                best = max(best, self.minimax(depth + 1, not is_max, bot_number))
+                self.undo_drop(pos_move, bot_number)
+
+            return best
+
+        else:
+            best = 1000
+
+            for pos_move in np.where(self.empty_flags)[0]:
+                self.drop(pos_move, other(bot_number))
+                best = min(best, self.minimax(depth + 1, not is_max, other(bot_number)))
+                self.undo_drop(pos_move, other(bot_number))
+            return best
+
+    def find_best_move(self, bot_number):
+        best_val = -1001
+        best_move = -1
+
+        for pos_move in np.where(self.empty_flags)[0]:
+            self.drop(pos_move, bot_number)
+            move_val = self.minimax(0, False, bot_number)
+            self.undo_drop(pos_move, bot_number)
+
+            if move_val > best_val:
+                best_val = move_val
+                best_move = pos_move
+
+        print(best_val)
+        print(best_move)
+        return best_move
+
 
 def main():
     board = Connect4Board()
+
+    board.drop(1, 1)
+    board.drop(1, 1)
+    board.drop(1, 1)
+    board.drop(2, 1)
+    board.drop(2, 2)
+
+    board.print_board()
+    board.find_best_move(1)
 
 
 if __name__ == '__main__':
