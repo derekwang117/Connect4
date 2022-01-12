@@ -55,7 +55,7 @@ class Connect4Board:
     def moves_left(self):
         return self.empty_flags.any()
 
-    def minimax(self, depth, is_max, bot_number):
+    def minimax(self, depth, is_max, bot_number, alpha, beta):
         score = self.evaluate(bot_number)
 
         if score == 1000:
@@ -66,23 +66,40 @@ class Connect4Board:
             return 0
 
         if is_max:
-            best = -1000
+            best_val = -1001
+            best_move = -1
 
             for pos_move in np.where(self.empty_flags)[0]:
                 self.drop(pos_move, bot_number)
-                best = max(best, self.minimax(depth + 1, not is_max, bot_number))
+                new_val = self.minimax(depth + 1, not is_max, bot_number, alpha, beta)
                 self.undo_drop(pos_move, bot_number)
 
-            return best
+                if new_val > best_val:
+                    best_val = new_val
+                    best_move = pos_move
+                alpha = max(alpha, best_val)
+                if beta <= alpha:
+                    break
+
+            return best_val
 
         else:
-            best = 1000
+            best_val = 1001
+            best_move = -1
 
             for pos_move in np.where(self.empty_flags)[0]:
                 self.drop(pos_move, other(bot_number))
-                best = min(best, self.minimax(depth + 1, not is_max, other(bot_number)))
+                new_val = self.minimax(depth + 1, not is_max, other(bot_number), alpha, beta)
                 self.undo_drop(pos_move, other(bot_number))
-            return best
+
+                if new_val < best_val:
+                    best_val = new_val
+                    best_move = pos_move
+                beta = min(beta, best_val)
+                if beta <= alpha:
+                    break
+
+            return best_val
 
     def find_best_move(self, bot_number):
         best_val = -1001
@@ -90,7 +107,7 @@ class Connect4Board:
 
         for pos_move in np.where(self.empty_flags)[0]:
             self.drop(pos_move, bot_number)
-            move_val = self.minimax(0, False, bot_number)
+            move_val = self.minimax(0, False, bot_number, -1001, 1001)
             self.undo_drop(pos_move, bot_number)
 
             if move_val > best_val:
