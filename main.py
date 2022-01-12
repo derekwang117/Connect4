@@ -1,6 +1,8 @@
 import numpy as np
 from scipy.signal import convolve2d
 
+import time
+
 
 def other(this):
     if this == 1:
@@ -11,8 +13,8 @@ def other(this):
 class Connect4Board:
 
     def __init__(self):
-        self.row_count = 6
-        self.column_count = 7
+        self.row_count = 4
+        self.column_count = 5
         self.board = np.zeros((self.column_count, self.row_count), dtype=int)
         self.empty_flags = np.ones(self.column_count, dtype=bool)
 
@@ -55,6 +57,11 @@ class Connect4Board:
     def moves_left(self):
         return self.empty_flags.any()
 
+    def center_order_empty_flags(self):
+        empty_indices = np.where(self.empty_flags)[0]
+        ordered_indices = np.argsort(abs(empty_indices - (self.column_count-1)/2))
+        return empty_indices[ordered_indices]
+
     def minimax(self, depth, is_max, bot_number, alpha, beta):
         score = self.evaluate(bot_number)
 
@@ -69,7 +76,7 @@ class Connect4Board:
             best_val = -1001
             best_move = -1
 
-            for pos_move in np.where(self.empty_flags)[0]:
+            for pos_move in self.center_order_empty_flags():
                 self.drop(pos_move, bot_number)
                 new_val = self.minimax(depth + 1, not is_max, bot_number, alpha, beta)
                 self.undo_drop(pos_move, bot_number)
@@ -87,7 +94,7 @@ class Connect4Board:
             best_val = 1001
             best_move = -1
 
-            for pos_move in np.where(self.empty_flags)[0]:
+            for pos_move in self.center_order_empty_flags():
                 self.drop(pos_move, other(bot_number))
                 new_val = self.minimax(depth + 1, not is_max, other(bot_number), alpha, beta)
                 self.undo_drop(pos_move, other(bot_number))
@@ -105,7 +112,7 @@ class Connect4Board:
         best_val = -1001
         best_move = -1
 
-        for pos_move in np.where(self.empty_flags)[0]:
+        for pos_move in self.center_order_empty_flags():
             self.drop(pos_move, bot_number)
             move_val = self.minimax(0, False, bot_number, -1001, 1001)
             self.undo_drop(pos_move, bot_number)
@@ -124,12 +131,19 @@ def main():
 
     board.drop(1, 1)
     board.drop(1, 1)
-    board.drop(1, 1)
-    board.drop(2, 1)
-    board.drop(2, 2)
-
+    board.drop(3, 1)
+    board.drop(3, 2)
     board.print_board()
-    board.find_best_move(1)
+
+    start_time = round(time.time() * 1000)
+
+    bot_n = 1
+    x = board.find_best_move(bot_n)
+    board.drop(x, bot_n)
+    board.print_board()
+
+    end_time = round(time.time() * 1000)
+    print("Time: " + str(end_time - start_time) + " ms")
 
 
 if __name__ == '__main__':
