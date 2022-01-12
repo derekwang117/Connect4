@@ -10,6 +10,10 @@ def other(this):
     return 1
 
 
+def symmetric(board):
+    return np.array_equal(board, np.flipud(board))
+
+
 class Connect4Board:
 
     def __init__(self):
@@ -62,6 +66,8 @@ class Connect4Board:
 
     def center_order_empty_flags(self):
         empty_indices = np.where(self.empty_flags)[0]
+        if symmetric(self.board):
+            empty_indices = np.where(np.array_split(self.empty_flags, 2)[0])[0]
         ordered_indices = np.argsort((empty_indices - (self.column_count - 1) / 2) ** 2 +
                                      (self.col_flag[empty_indices] - (self.row_count - 1) / 2) ** 2)
         return empty_indices[ordered_indices]
@@ -147,13 +153,17 @@ def test(board):
 
 
 def main():
-    board = Connect4Board()
+    c4_game = Connect4Board()
 
-    fill_board(board, "1133")
-    board.print_board()
+    # fill_board(c4_game, "1133")
+    c4_game.drop(1, 1)
+    c4_game.drop(1, 1)
+    c4_game.drop(3, 1)
+    c4_game.drop(3, 2)
+    c4_game.print_board()
 
     # zobrist hashing and multithreading
-    test(board)
+    test(c4_game)
 
 
 if __name__ == '__main__':
