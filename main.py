@@ -17,6 +17,7 @@ class Connect4Board:
         self.column_count = 5
         self.board = np.zeros((self.column_count, self.row_count), dtype=int)
         self.empty_flags = np.ones(self.column_count, dtype=bool)
+        self.col_flag = np.zeros(self.column_count, dtype=int)
 
     def print_board(self):
         print(np.rot90(self.board))
@@ -27,12 +28,14 @@ class Connect4Board:
         self.board[col][open_index] = player
         if open_index == self.row_count - 1:
             self.empty_flags[col] = False
+        self.col_flag[col] += 1
 
     def undo_drop(self, col, player):
         last_index = np.where(self.board[col] == player)[0][-1]
         self.board[col][last_index] = 0
         if last_index == self.row_count - 1:
             self.empty_flags[col] = True
+        self.col_flag[col] -= 1
 
     def can_drop(self, col):
         return self.empty_flags[col]
@@ -59,7 +62,8 @@ class Connect4Board:
 
     def center_order_empty_flags(self):
         empty_indices = np.where(self.empty_flags)[0]
-        ordered_indices = np.argsort(abs(empty_indices - (self.column_count - 1) / 2))
+        ordered_indices = np.argsort((empty_indices - (self.column_count - 1) / 2) ** 2 +
+                                     (self.col_flag[empty_indices] - (self.row_count - 1) / 2) ** 2)
         return empty_indices[ordered_indices]
 
     def minimax(self, depth, is_max, bot_number, alpha, beta):
@@ -122,6 +126,18 @@ class Connect4Board:
         return best_move
 
 
+def test(b):
+    start_time = round(time.time() * 1000)
+
+    bot_n = 1
+    x = b.find_best_move(bot_n)
+    b.drop(x, bot_n)
+    b.print_board()
+
+    end_time = round(time.time() * 1000)
+    print("Time: " + str(end_time - start_time) + " ms")
+
+
 def main():
     board = Connect4Board()
 
@@ -131,15 +147,7 @@ def main():
     board.drop(3, 2)
     board.print_board()
 
-    start_time = round(time.time() * 1000)
-
-    bot_n = 1
-    x = board.find_best_move(bot_n)
-    board.drop(x, bot_n)
-    board.print_board()
-
-    end_time = round(time.time() * 1000)
-    print("Time: " + str(end_time - start_time) + " ms")
+    test(board)
 
 
 if __name__ == '__main__':
