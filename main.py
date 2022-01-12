@@ -10,7 +10,7 @@ def other(this):
     return 1
 
 
-def symmetric(board):
+def check_symmetric(board):
     return np.array_equal(board, np.flipud(board))
 
 
@@ -64,15 +64,15 @@ class Connect4Board:
     def moves_left(self):
         return self.empty_flags.any()
 
-    def center_order_empty_flags(self):
+    def center_order_empty_flags(self, is_symmetric):
         empty_indices = np.where(self.empty_flags)[0]
-        if symmetric(self.board):
+        if is_symmetric:
             empty_indices = np.where(np.array_split(self.empty_flags, 2)[0])[0]
         ordered_indices = np.argsort((empty_indices - (self.column_count - 1) / 2) ** 2 +
                                      (self.col_flag[empty_indices] - (self.row_count - 1) / 2) ** 2)
         return empty_indices[ordered_indices]
 
-    def minimax(self, depth, is_max, bot_number, alpha, beta):
+    def minimax(self, depth, is_max, bot_number, alpha, beta, is_symmetric):
         score = self.evaluate(bot_number)
 
         if score == 1000:
@@ -85,9 +85,12 @@ class Connect4Board:
         if is_max:
             best_val = -1001
 
-            for pos_move in self.center_order_empty_flags():
+            for pos_move in self.center_order_empty_flags(is_symmetric):
                 self.drop(pos_move, bot_number)
-                new_val = self.minimax(depth + 1, not is_max, bot_number, alpha, beta)
+                if is_symmetric:
+                    new_val = self.minimax(depth + 1, not is_max, bot_number, alpha, beta, check_symmetric(self.board))
+                else:
+                    new_val = self.minimax(depth + 1, not is_max, bot_number, alpha, beta, False)
                 self.undo_drop(pos_move, bot_number)
 
                 if new_val > best_val:
@@ -101,9 +104,12 @@ class Connect4Board:
         else:
             best_val = 1001
 
-            for pos_move in self.center_order_empty_flags():
+            for pos_move in self.center_order_empty_flags(is_symmetric):
                 self.drop(pos_move, other(bot_number))
-                new_val = self.minimax(depth + 1, not is_max, other(bot_number), alpha, beta)
+                if is_symmetric:
+                    new_val = self.minimax(depth + 1, not is_max, other(bot_number), alpha, beta, check_symmetric(self.board))
+                else:
+                    new_val = self.minimax(depth + 1, not is_max, other(bot_number), alpha, beta, False)
                 self.undo_drop(pos_move, other(bot_number))
 
                 if new_val < best_val:
@@ -118,9 +124,9 @@ class Connect4Board:
         best_val = -1001
         best_move = -1
 
-        for pos_move in self.center_order_empty_flags():
+        for pos_move in self.center_order_empty_flags(check_symmetric(self.board)):
             self.drop(pos_move, bot_number)
-            move_val = self.minimax(0, False, bot_number, -1001, 1001)
+            move_val = self.minimax(0, False, bot_number, -1001, 1001, check_symmetric(self.board))
             self.undo_drop(pos_move, bot_number)
 
             if move_val > best_val:
@@ -157,7 +163,7 @@ def main():
 
     # fill_board(c4_game, "1133")
     c4_game.drop(1, 1)
-    c4_game.drop(1, 1)
+    c4_game.drop(1, 2)
     c4_game.drop(3, 1)
     c4_game.drop(3, 2)
     c4_game.print_board()
