@@ -126,13 +126,21 @@ class Connect4Board:
         return best_move
 
 
-def test(b):
+def fill_board(board, move_sequence):
+    for index, char in enumerate(move_sequence):
+        if index % 2 == 0:
+            board.drop(int(char), 1)
+        else:
+            board.drop(int(char), 2)
+
+
+def test(board):
     start_time = round(time.time() * 1000)
 
     bot_n = 1
-    x = b.find_best_move(bot_n)
-    b.drop(x, bot_n)
-    b.print_board()
+    x = board.find_best_move(bot_n)
+    board.drop(x, bot_n)
+    board.print_board()
 
     end_time = round(time.time() * 1000)
     print("Time: " + str(end_time - start_time) + " ms")
@@ -141,12 +149,10 @@ def test(b):
 def main():
     board = Connect4Board()
 
-    board.drop(1, 1)
-    board.drop(1, 1)
-    board.drop(3, 1)
-    board.drop(3, 2)
+    fill_board(board, "1133")
     board.print_board()
 
+    # zobrist hashing and multithreading
     test(board)
 
 
