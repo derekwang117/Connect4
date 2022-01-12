@@ -59,7 +59,7 @@ class Connect4Board:
 
     def center_order_empty_flags(self):
         empty_indices = np.where(self.empty_flags)[0]
-        ordered_indices = np.argsort(abs(empty_indices - (self.column_count-1)/2))
+        ordered_indices = np.argsort(abs(empty_indices - (self.column_count - 1) / 2))
         return empty_indices[ordered_indices]
 
     def minimax(self, depth, is_max, bot_number, alpha, beta):
@@ -74,7 +74,6 @@ class Connect4Board:
 
         if is_max:
             best_val = -1001
-            best_move = -1
 
             for pos_move in self.center_order_empty_flags():
                 self.drop(pos_move, bot_number)
@@ -83,7 +82,6 @@ class Connect4Board:
 
                 if new_val > best_val:
                     best_val = new_val
-                    best_move = pos_move
                 alpha = max(alpha, best_val)
                 if beta <= alpha:
                     break
@@ -92,7 +90,6 @@ class Connect4Board:
 
         else:
             best_val = 1001
-            best_move = -1
 
             for pos_move in self.center_order_empty_flags():
                 self.drop(pos_move, other(bot_number))
@@ -101,7 +98,6 @@ class Connect4Board:
 
                 if new_val < best_val:
                     best_val = new_val
-                    best_move = pos_move
                 beta = min(beta, best_val)
                 if beta <= alpha:
                     break
