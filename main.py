@@ -26,7 +26,7 @@ class Connect4Board:
         self.ZobristTable = np.random.randint(2147483647, 9223372036854775807,
                                               size=(self.column_count, self.row_count, 2), dtype=np.int64)
         self.hash = self.compute_hash()
-        print(self.hash)
+        self.hash_table = {}
 
     def compute_hash(self):
         hash_val = 0
@@ -51,7 +51,6 @@ class Connect4Board:
         self.col_flag[col] += 1
 
         self.update_hash(col, open_index, player)
-        print(self.hash)
 
     def undo_drop(self, col, player):
         last_index = np.where(self.board[col] == player)[0][-1]
@@ -61,7 +60,6 @@ class Connect4Board:
         self.col_flag[col] -= 1
 
         self.update_hash(col, last_index, player)
-        print(self.hash)
 
     def can_drop(self, col):
         return self.empty_flags[col]
@@ -105,6 +103,10 @@ class Connect4Board:
             return 0
 
         if is_max:
+            hashed = self.hash_table.get(self.hash)
+            if hashed and hashed[1] <= alpha and hashed[2] > beta:
+                return hashed[0]
+
             best_val = -1001
 
             for pos_move in self.center_order_empty_flags(is_symmetric):
@@ -121,9 +123,14 @@ class Connect4Board:
                 if beta <= alpha:
                     break
 
+            self.hash_table[self.hash] = (best_val, alpha, beta)
             return best_val
 
         else:
+            hashed = self.hash_table.get(self.hash)
+            if hashed and hashed[1] >= alpha and hashed[2] < beta:
+                return hashed[0]
+
             best_val = 1001
 
             for pos_move in self.center_order_empty_flags(is_symmetric):
@@ -140,6 +147,7 @@ class Connect4Board:
                 if beta <= alpha:
                     break
 
+            self.hash_table[self.hash] = (best_val, alpha, beta)
             return best_val
 
     def find_best_move(self, bot_number):
@@ -171,8 +179,8 @@ def test(board):
     start_time = round(time.time() * 1000)
 
     bot_n = 2
-    x = board.find_best_move(bot_n)
-    board.drop(x, bot_n)
+    best_move = board.find_best_move(bot_n)
+    board.drop(best_move, bot_n)
     board.print_board()
 
     end_time = round(time.time() * 1000)
@@ -186,7 +194,7 @@ def main():
     c4_game.print_board()
 
     # zobrist hashing and multithreading
-    #test(c4_game)
+    test(c4_game)
 
 
 if __name__ == '__main__':
