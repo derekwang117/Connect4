@@ -25,15 +25,15 @@ class Connect4Board:
 
         self.ZobristTable = np.random.randint(2147483647, 9223372036854775807,
                                               size=(self.column_count, self.row_count, 2), dtype=np.int64)
-        self.hash = self.compute_hash()
+        self.hash = self.compute_hash(self.board)
         self.hash_table = {}
 
-    def compute_hash(self):
+    def compute_hash(self, board):
         hash_val = 0
         for i in range(self.column_count):
             for j in range(self.row_count):
-                if self.board[i][j]:
-                    hash_val ^= self.ZobristTable[i][j][self.board[i][j] - 1]
+                if board[i][j]:
+                    hash_val ^= self.ZobristTable[i][j][board[i][j] - 1]
         return hash_val
 
     def update_hash(self, col, row, changed):
@@ -76,9 +76,9 @@ class Connect4Board:
 
         for kernel in win_kernels:
             if (convolve2d(b_player, kernel, mode="valid") == 4).any():
-                return 1000
+                return 42
             if (convolve2d(b_other, kernel, mode="valid") == 4).any():
-                return -1000
+                return -42
         return 0
 
     def moves_left(self):
@@ -95,9 +95,9 @@ class Connect4Board:
     def minimax(self, depth, is_max, bot_number, alpha, beta, is_symmetric):
         score = self.evaluate(bot_number)
 
-        if score == 1000:
+        if score == 42:
             return score - depth
-        if score == -1000:
+        if score == -42:
             return score + depth
         if not self.moves_left():
             return 0
@@ -107,12 +107,13 @@ class Connect4Board:
             if hashed and hashed[1] <= alpha and hashed[2] > beta:
                 return hashed[0]
 
-            best_val = -1001
+            best_val = -42
 
             for pos_move in self.center_order_empty_flags(is_symmetric):
                 self.drop(pos_move, bot_number)
                 if is_symmetric:
-                    new_val = self.minimax(depth + 1, not is_max, bot_number, alpha, beta, check_symmetric(self.board))
+                    new_val = self.minimax(depth + 1, not is_max, bot_number,
+                                           alpha, beta, check_symmetric(self.board))
                 else:
                     new_val = self.minimax(depth + 1, not is_max, bot_number, alpha, beta, False)
                 self.undo_drop(pos_move, bot_number)
@@ -131,12 +132,13 @@ class Connect4Board:
             if hashed and hashed[1] >= alpha and hashed[2] < beta:
                 return hashed[0]
 
-            best_val = 1001
+            best_val = 42
 
             for pos_move in self.center_order_empty_flags(is_symmetric):
                 self.drop(pos_move, other(bot_number))
                 if is_symmetric:
-                    new_val = self.minimax(depth + 1, not is_max, other(bot_number), alpha, beta, check_symmetric(self.board))
+                    new_val = self.minimax(depth + 1, not is_max, other(bot_number),
+                                           alpha, beta, check_symmetric(self.board))
                 else:
                     new_val = self.minimax(depth + 1, not is_max, other(bot_number), alpha, beta, False)
                 self.undo_drop(pos_move, other(bot_number))
@@ -151,12 +153,12 @@ class Connect4Board:
             return best_val
 
     def find_best_move(self, bot_number):
-        best_val = -1001
+        best_val = -42
         best_move = -1
 
         for pos_move in self.center_order_empty_flags(check_symmetric(self.board)):
             self.drop(pos_move, bot_number)
-            move_val = self.minimax(0, False, bot_number, -1001, 1001, check_symmetric(self.board))
+            move_val = self.minimax(0, False, bot_number, -42, 42, check_symmetric(self.board))
             self.undo_drop(pos_move, bot_number)
 
             if move_val > best_val:
@@ -178,7 +180,7 @@ def fill_board(board, move_sequence):
 def test(board):
     start_time = round(time.time() * 1000)
 
-    bot_n = 2
+    bot_n = 1
     best_move = board.find_best_move(bot_n)
     board.drop(best_move, bot_n)
     board.print_board()
@@ -190,7 +192,7 @@ def test(board):
 def main():
     c4_game = Connect4Board()
 
-    fill_board(c4_game, "222")
+    fill_board(c4_game, "22")
     c4_game.print_board()
 
     # zobrist hashing and multithreading
